@@ -4,6 +4,7 @@ function [A, b, newPath] = SCMFromPath(path, point_cloud_obs, map_boundary)
     map_size = min(abs(map_boundary.ld - map_boundary.ru));
     tolerance = 1e-6;
     numSegments = size(path, 1) - 1;  % number of segments
+    R = map_size * 4;
 
     % preparation
     A = {};
@@ -14,9 +15,6 @@ function [A, b, newPath] = SCMFromPath(path, point_cloud_obs, map_boundary)
     for ii = 1:numSegments
         cur_pt = path(ii, :);
         next_pt = path(ii+1, :);
-
-        segLength = norm(cur_pt - next_pt);
-        R = segLength / 2;
 
         [cur_A, cur_b] = LargeConvexPolytopes(point_cloud_obs, cur_pt, R);
 

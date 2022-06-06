@@ -1,11 +1,11 @@
-function [total_time, ts, X] = TrajectoryPlanning(path, decomp, time_allocation)
+function [total_time, ts, X, ElapsedTimes] = TrajectoryPlanning(path, decomp, time_allocation)
     speed   = time_allocation.avg_speed;
     acc     = time_allocation.acc;
     
     disp(['The planned speed is : ', num2str(speed)]);
     tic
     if strcmp(time_allocation.type, 'averageSpeed')
-        [ts, total_time] = averageSpeed_ta(path0, speed);
+        [ts, total_time] = averageSpeed_ta(path, speed);
     elseif strcmp(time_allocation.type, 'trapzoidSpeed')
         [ts, total_time] = trapezoidalSpeed_ta(path, speed, acc);
     end
@@ -21,7 +21,7 @@ function [total_time, ts, X] = TrajectoryPlanning(path, decomp, time_allocation)
 
     % use 'Quadratic Programming' and SFC(which make by Ax < b) get Trajectory planning. ========================
     % use SFC make Inequality constraints
-    X = QPbyUseSFC(path, ts, decomp);
+    [X, ElapsedTimes] = QPbyUseSFC(path, ts, decomp);
 
     disp('generator trajectory time is :');
     toc

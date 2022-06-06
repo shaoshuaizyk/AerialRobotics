@@ -40,19 +40,14 @@ decomps{1} = SFC_3D(path{2}, obps, map.boundary); %  call SFC
 toc
 
 % Trajectory planning (Liu)
-[t_time, ts_par, x_par, SFCTimes] = TrajectoryPlanning(path{path_id}, decomps{SFC_id}, time_allocation);
-fprintf('SFC -> Trajectory time is: %.4f sec', SFCTimes.total)
+% [t_time, ts_par, x_par, ElapsedTimes] = TrajectoryPlanning(path{path_id}, decomps{SFC_id}, time_allocation);
+% fprintf('SFC -> Trajectory time is: %.4f sec', ElapsedTimes.total)
 
 
 % Trajectory planning (star-convex)
 wayPoints = path{path_id};
-[X, SCMTimes] = StarConvexTrajectoryPlanning(wayPoints, obps, map.boundary, time_allocation);
-fprintf('JPS -> StarConvexMethod time is : %.4f sec', SCMTimes.total);
-
-
-%% comparing times
-SFCTimes
-SCMTimes
+[X, ElapsedTimes] = StarConvexTrajectoryPlanning(wayPoints, obps, map.boundary, time_allocation);
+fprintf('JPS -> StarConvexMethod time is : %.4f sec', ElapsedTimes.total);
 
 
 %% draw path and blocks

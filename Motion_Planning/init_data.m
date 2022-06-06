@@ -21,7 +21,7 @@ switch choose_map
       start = {[1.2 0 0]};
       stop  = {[1.5 5 2]};
       speed = 1;
-      acc   = 1; 
+      acc   = 3; 
    case 2
       map.load_map('0Maps/3dCorner.txt', 0.1, 0.1, 0.1);
       start = {[2.6  1.0 1.0]};

@@ -3,12 +3,17 @@
 % d:derivertive order, 1:minimum vel 2:minimum acc 3:minimum jerk 4:minimum snap
 % t1:start timestamp for polynormial
 % t2:end timestap for polynormial
+
 function Q1 = calc_Q(n_order, d, t1, t2)
-    T = zeros((n_order-d)*2+1,1);
+
+    T = zeros((n_order-d)*2+1, 1);
+
     for n = 1:(n_order-d)*2+1
         T(n) = t2^n-t1^n;
     end
-    Q1 = zeros(n_order);
+
+    Q1 = zeros(n_order+1);
+
     for i = d+1 : n_order+1
         for j = i : n_order+1
             c = i + j - 2*d - 1;

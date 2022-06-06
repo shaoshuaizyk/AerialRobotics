@@ -16,7 +16,7 @@ function [ts, total_time] = trapezoidalSpeed_ta(path, avg_v, acc)
     ts = ts*total_time;
     
     
-    % trapezoid Area = 0.5(a + b) × h
+    % trapezoid Area = 0.5(a + b) Ã— h
     % math ep
 %     a1 = ts(2) - t_acc;
 %     b1 = a1 - speed_h/acc;
@@ -44,17 +44,17 @@ function [ts, total_time] = trapezoidalSpeed_ta(path, avg_v, acc)
     ts(2) = ts(2) + sort_ans(1,1);
     ts(end-1) = ts(end-1) - sort_ans(1,2); 
     
-%     if (path_len < 2*s_acc)
-%         assert(1 >= 2); 
-%     end
-% 
-%     if (path_seg_len(1)   < s_acc)
-%         assert(1 >= 2); 
-%     end
-% 
-%     if (path_seg_len(end) < s_acc)
-%         assert(1 >= 2); 
-%     end
+    if (path_len < 2*s_acc)
+        assert(1 >= 2); 
+    end
+
+    if (path_seg_len(1)   < s_acc)
+        assert(1 >= 2); 
+    end
+
+    if (path_seg_len(end) < s_acc)
+        assert(1 >= 2); 
+    end
     
 end
 
