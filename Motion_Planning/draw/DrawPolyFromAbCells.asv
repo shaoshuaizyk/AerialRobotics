@@ -1,0 +1,109 @@
+%{
+Draw surfaces centered around a point "ct" described by the Ax = b
+equation. 
+
+Input:
+    As: cell array, containing A's from each polytope
+    bs: cell array, containing b's from each polytope
+    cts: (n+1)x3 vector, center point considered
+    bound: struct, map boundaries
+
+Output:
+    <None>
+
+%}
+
+function [] = DrawPolyFromAbCells(As, bs, cts, bound)
+    
+    % parameters
+    lsNum = 2;  % all surfaces are flat so only 2 is needed
+    offSet = 0.5;  % determines how large we want the surface to be shown
+    tol = 1e-6;
+
+    % number of polytopes
+    numPoly = length(As);
+
+    % boundaries
+    ld = bound.ld;
+    ru = bound.ru;
+    xl = [ld(1), ru(1)];
+    yl = [ld(2), ru(2)];
+    zl = [ld(3), ru(3)];
+
+    % draw
+    figure('Position', [10, 10, 1200, 800])
+    hold on
+    for pp = 1:numPoly
+        % unpacking
+        A = As{pp};
+        b = bs{pp};
+        ct = cts(pp, :) + 0.5 * (cts(pp + 1, :) - cts(pp, :));
+
+        % how many surfaces
+        numSurf = length(b);
+        ind_1 = 1;
+        for ii = 2:numSurf-1
+            ind_2 = ii;
+            for jj = 3:numSurf
+                ind_3 = jj;
+                A_cur = [A(ind_1, :); A(ind_2, :); A(ind_3, :)];
+                b_cur = [b(ind_1); b(ind_2); b(ind_3)];
+                if deg(A_cur) <= tol
+                    error("\nThe composed A is near singular!");
+                end
+                intPoint = A_cur \ b_cur;
+            end
+        end
+
+
+
+
+
+
+
+
+
+
+        xRange = linspace(ct(1) - offSet, ct(1) + offSet, lsNum);
+        yRange = linspace(ct(2) - offSet, ct(2) + offSet, lsNum);
+        [X, Y] = meshgrid(xRange, yRange);
+        Z = zeros(size(X));
+
+        for ss = 1:numSurf
+            ARow = A(ss, :);
+            bRow = b(ss);
+
+            for ii = 1:lsNum
+                for jj = 1:lsNum
+                    Z(ii, jj) = CalcZ(X(ii, jj), Y(ii, jj), ARow, bRow);
+                end
+            end
+            surface(X, Y, Z, 'FaceAlpha', 0.3);
+        end
+    end
+    
+    % plot path with different color
+    rVals = linspace(0, 1, numPoly);
+    gVals = linspace(1, 0, numPoly);
+    bVals = linspace(0, 0, numPoly);
+
+    for ii = 1:numPoly
+        curSeg = cts(ii:ii+1, :);
+        curRGB = [rVals(ii), gVals(ii), bVals(ii)];
+        plot3(curSeg(:,1), curSeg(:,2), curSeg(:,3), 'Color', curRGB, 'LineWidth', 16)
+    end
+    hold off
+    view([1, 1, 1]);
+    xlim(xl);
+    ylim(yl);
+    zlim(zl);
+
+end
+
+
+% given x, y, and A b, calculate z
+function [z] = CalcZ(x, y, A, b)
+
+    z = (1 / A(3)) * (b - A(1) * x - A(2) * y);
+
+end

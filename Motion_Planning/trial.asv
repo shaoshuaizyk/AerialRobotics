@@ -1,0 +1,57 @@
+clear 
+close all
+clc
+
+num = 1;
+As = zeros(num, 3);
+bs = zeros(num, 1);
+
+for ii = 1:num
+    As(ii, :) = rand(1, 3) * randi([1, 10]);
+    bs(ii) = rand() * randi([1, 10]);
+end
+
+lsNum = 5;
+xRange = linspace(1, 10, lsNum);
+yRange = linspace(1, 10, lsNum);
+[X, Y] = meshgrid(xRange, yRange);
+
+figure()
+hold on
+for pp = 1:num
+    A = As(pp, :);
+    b= bs(pp);
+    for ii = 1:lsNum
+        for jj = 1:lsNum
+            x = X(ii, jj);
+            y = Y(ii, jj);
+            z = [F] = BasisChangeMatrix(aVec, bVec)
+        end
+    end
+end
+
+
+
+function [F] = BasisChangeMatrix(aVec, bVec)
+
+    % normalize to unit vectors
+    aVec = aVec ./ norm(aVec);
+    bVec = bVec ./ norm(bVec);
+
+    % vector projection of bVec onto aVec
+    u = aVec;
+    v = (bVec - dot(aVec, bVec) * aVec) ./ norm((bVec - dot(aVec, bVec) * aVec));
+    w = cross(bVec, aVec);
+
+    % composing the basis change matrix
+    F = [u, v, w]';
+
+end
+
+
+% given x, y, and A b, calculate z
+function [z] = CalcZ(x, y, ARow, bRow)
+
+    z = (1 / ARow(3)) * (bRow - ARow(1) * x - aRow(2) * y);
+
+end

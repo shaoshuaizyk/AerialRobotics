@@ -12,12 +12,17 @@ Inputs:
 
 
 
-function [X, ElapsedTimes] = StarConvexTrajectoryPlanning(wayPoints, pointCloudObs, mapBoundary, time_allocation)
+function [X, ElapsedTimes, R, numPoly, numSurf] = StarConvexTrajectoryPlanning(wayPoints, pointCloudObs, mapBoundary, time_allocation, ratioR, figPlot, noFillPts)
     % dimension
     dim = 3;
 
     % generating densified polytopes satisfying the SFC connection
-    [A, b, path] = SCMFromPath(wayPoints, pointCloudObs, mapBoundary); 
+    [A, b, path, R, numPoly, numSurf] = SCMFromPath(wayPoints, pointCloudObs, mapBoundary, ratioR, noFillPts); 
+
+    % drawing surface
+    if figPlot
+        DrawPolyFromAbCells(A(1:2), b(1:2), path(1:3, :), mapBoundary);
+    end
 %     segNum = length(b);
 %     constNum = 0;
 %     for ii = 1:segNum
@@ -72,7 +77,7 @@ function [X, ElapsedTimes] = StarConvexTrajectoryPlanning(wayPoints, pointCloudO
 %     minValue = p' * H * p;      % minimum value for cost
 %     disp(['minSnapValue is : ',num2str(minValue)]);
 	
-%     xll = xlen / dim;
+    xll = xlen / dim;
 %     px = p(1:xll, 1);           % x's
 %     py = p(xll+1:2*xll, 1);     % y's
 %     pz = p(2*xll+1:3*xll, 1);   % z's
@@ -87,5 +92,6 @@ function [X, ElapsedTimes] = StarConvexTrajectoryPlanning(wayPoints, pointCloudO
     % packing
 %     X = [px, py, pz];
     X = [];
+
 
 end
