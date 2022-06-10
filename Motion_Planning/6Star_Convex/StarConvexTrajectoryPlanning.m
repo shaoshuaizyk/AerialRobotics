@@ -12,7 +12,7 @@ Inputs:
 
 
 
-function [X, ElapsedTimes, R, numPoly, numSurf] = StarConvexTrajectoryPlanning(wayPoints, pointCloudObs, mapBoundary, time_allocation, ratioR, figPlot, noFillPts)
+function [X, ElapsedTimes, R, numPoly, numSurf] = StarConvexTrajectoryPlanning(wayPoints, pointCloudObs, mapBoundary, time_allocation, ratioR, figPlot, noFillPts, skipQP)
     % dimension
     dim = 3;
 
@@ -72,15 +72,23 @@ function [X, ElapsedTimes, R, numPoly, numSurf] = StarConvexTrajectoryPlanning(w
     options.Diagnostics = "on";
     lb = []; ub = []; x0 = [];
     tic
-%     p = quadprog(H, f, A, b, Aeq, beq, lb, ub, x0, options);
+    if not(skipQP)
+        [p, ~, flag] = quadprog(H, f, A, b, Aeq, beq, lb, ub, x0, options);
+
+%         if flag <= 0
+%             error("SCP QP flagged at %d", flag)
+%         end
+    end
     QPTime = toc;
 %     minValue = p' * H * p;      % minimum value for cost
 %     disp(['minSnapValue is : ',num2str(minValue)]);
 	
     xll = xlen / dim;
-%     px = p(1:xll, 1);           % x's
-%     py = p(xll+1:2*xll, 1);     % y's
-%     pz = p(2*xll+1:3*xll, 1);   % z's
+    if not(skipQP)
+        px = p(1:xll, 1);           % x's
+        py = p(xll+1:2*xll, 1);     % y's
+        pz = p(2*xll+1:3*xll, 1);   % z's
+    end
 
     % returning time consumed
     ElapsedTimes = struct(...
@@ -90,8 +98,11 @@ function [X, ElapsedTimes, R, numPoly, numSurf] = StarConvexTrajectoryPlanning(w
         'total', sum([timePolytope, timePolynomial, QPTime]'));
 
     % packing
-%     X = [px, py, pz];
     X = [];
+    if not(skipQP)
+        X = [px, py, pz];     
+    end
+
 
 
 end

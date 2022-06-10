@@ -12,13 +12,14 @@ addpath(genpath('./'));
 
 %% parameters
 converts2ms = 1000;
-avgTimeRuns = 31;
+avgTimeRuns = 1;
 ratioNum = 31;
 figPlot = false;
 noFillPts = false;
-mode_1 = false;
-mode_2 = true;
-mode_3 = true;
+mode_1 = true;
+mode_2 = false;
+mode_3 = false;
+skipQP = true;
 
 %% map generation
 map = GridMap();
@@ -28,76 +29,83 @@ map.flag_obstacles();
 
 %% path planning
 nquad = length(start);
-JPSTime = 0;
-for tt = 1:avgTimeRuns
-    tic
-    for qn = 1:nquad    
-        path{qn} = JPS_3D(map, start{qn}, stop{qn});
-        path{qn} = [start{qn}; path{qn}(1:end,:)];
-        path{qn}(end + 1,:) = stop{qn};
-    end
-    JPSTimeCur = toc;
-    JPSTime = JPSTime + JPSTimeCur;
-end
 
-JPSTime = JPSTime / avgTimeRuns;
-
-%% delete the points of no-use
-path{2} = simplify_path(map, path{1});
-
-%% Generating Convex Polytopes
-obps = PointCloudMap(map.blocks, map.margin);   % blocks of Metric Map change to point cloud
-
-decomps{2} = [];
-
-%% main 1
 if mode_1
+
+    JPSTime = 0;
     JPS2SFCTime = 0;
-    for tt = 1:avgTimeRuns
-        tic
-        decomps{1} = SFC_3D(path{2}, obps, map.boundary); %  call SFC
-        JPS2SFCTimeCur = toc;
-        JPS2SFCTime = JPS2SFCTime + JPS2SFCTimeCur;
-    end
-    
-    JPS2SFCTime = JPS2SFCTime / avgTimeRuns;
     
     SFCTime.polytope = 0;
     SFCTime.polynomial = 0;
     SFCTime.totalWoQP = 0;
     SFCTime.QP = 0;
-    for tt = 1:avgTimeRuns
+    SFCTime.total = 0;
+    
+    SCPTime.polytope = 0;
+    SCPTime.polynomial = 0;
+    SCPTime.totalWoQP = 0;
+    SCPTime.QP = 0;
+    SCPTime.total = 0;
+
+    for ii = 1:avgTimeRuns
+
+        tic
+        for qn = 1:nquad    
+            path{qn} = JPS_3D(map, start{qn}, stop{qn});
+            path{qn} = [start{qn}; path{qn}(1:end,:)];
+            path{qn}(end + 1,:) = stop{qn};
+        end
+        JPSTimeCur = toc;
+        JPSTime = JPSTime + JPSTimeCur;
+        
+        % delete the points of no-use
+        path{2} = simplify_path(map, path{1});
+        
+        % Generating Convex Polytopes
+        obps = PointCloudMap(map.blocks, map.margin);   % blocks of Metric Map change to point cloud
+        
+        decomps{2} = [];
+        
+        % main 1
+        tic
+        decomps{1} = SFC_3D(path{2}, obps, map.boundary); %  call SFC
+        JPS2SFCTimeCur = toc;
+        JPS2SFCTime = JPS2SFCTime + JPS2SFCTimeCur;    
+    
         % Trajectory planning (Liu)
         [t_time, ts_par, x_par, SFCTimes] = TrajectoryPlanning(path{path_id}, decomps{SFC_id}, time_allocation);
         SFCTime.polytope = SFCTime.polytope + SFCTimes.polytope;
         SFCTime.polynomial = SFCTime.polynomial + SFCTimes.polynomial;
         SFCTime.totalWoQP = SFCTime.totalWoQP + SFCTimes.polytope + SFCTimes.polynomial;
         SFCTime.QP = SFCTime.QP + SFCTimes.QP;
+        SFCTime.total = SFCTime.total + SFCTimes.total;
+        
+        % Trajectory planning (star-convex)   
+        ratioR = 0.5;
+        [X, SCPTimes, ~, ~, ~] = StarConvexTrajectoryPlanning(path{path_id}, obps, map.boundary, time_allocation, ratioR, figPlot, noFillPts, skipQP);
+        SCPTime.polytope = SCPTime.polytope + SCPTimes.polytope;
+        SCPTime.polynomial = SCPTime.polynomial + SCPTimes.polynomial;
+        SCPTime.totalWoQP = SCPTime.totalWoQP + SCPTimes.polytope + SCPTimes.polynomial;
+        SCPTime.QP = SCPTime.QP + SCPTimes.QP;
+        SCPTime.total = SCPTime.total + SCPTimes.total;
+        
     end
+
+    % adjusting times
+    JPSTime = JPSTime / avgTimeRuns;
+    JPS2SFCTime = JPS2SFCTime / avgTimeRuns;
     
     SFCTime.polytope = SFCTime.polytope / avgTimeRuns;
     SFCTime.polynomial = SFCTime.polynomial / avgTimeRuns;
     SFCTime.totalWoQP = SFCTime.totalWoQP / avgTimeRuns;
     SFCTime.QP = SFCTime.QP / avgTimeRuns;
-    
-    % Trajectory planning (star-convex)   
-    SCPTime.polytope = 0;
-    SCPTime.polynomial = 0;
-    SCPTime.totalWoQP = 0;
-    SCPTime.QP = 0;
-    for tt = 1:avgTimeRuns
-        ratioR = 0.5;
-        [X, SCPTimes, ~, ~, ~] = StarConvexTrajectoryPlanning(path{path_id}, obps, map.boundary, time_allocation, ratioR, figPlot, noFillPts);
-        SCPTime.polytope = SCPTime.polytope + SCPTimes.polytope;
-        SCPTime.polynomial = SCPTime.polynomial + SCPTimes.polynomial;
-        SCPTime.totalWoQP = SCPTime.totalWoQP + SCPTimes.polytope + SCPTimes.polynomial;
-        SCPTime.QP = SCPTime.QP + SCPTimes.QP;
-    end
+    SFCTime.total = SFCTime.total / avgTimeRuns;
     
     SCPTime.polytope = SCPTime.polytope / avgTimeRuns;
     SCPTime.polynomial = SCPTime.polynomial / avgTimeRuns;
     SCPTime.totalWoQP = SCPTime.totalWoQP  / avgTimeRuns;
     SCPTime.QP = SCPTime.QP / avgTimeRuns;
+    SCPTime.total = SCPTime.total / avgTimeRuns;
     
     % reporting elapsed times
     fprintf("\n\n")
@@ -110,19 +118,46 @@ if mode_1
     fprintf('SFC -> SFC Trajectory polynomial time is:         %.6f ms\n', SFCTime.polynomial * converts2ms)
     fprintf('SFC -> SFC Trajectory p+p w/o quadprog time is:   %.6f ms\n', SFCTime.totalWoQP * converts2ms)
     fprintf('SFC -> SFC Trajectory quadprog time is:           %.6f ms\n', SFCTime.QP * converts2ms)
+    fprintf("\n\n")
     fprintf('JPS -> SFC Trajectory polytope time is:           %.6f ms\n', (SFCTime.polytope + JPS2SFCTime) * converts2ms)
-    fprintf('JPS -> SFC Trajectory polynomial time is:         %.6f ms\n', (SFCTime.polynomial + JPS2SFCTime) * converts2ms)
+    fprintf('JPS -> SFC Trajectory polynomial time is:         %.6f ms\n', SFCTime.polynomial * converts2ms)
+    fprintf('JPS -> SFC Trajectory quadprog time is:           %.6f ms\n', SFCTime.QP * converts2ms)
     fprintf('JPS -> SFC Trajectory total w/o quadprog time is: %.6f ms\n', (SFCTime.totalWoQP + JPS2SFCTime) * converts2ms)
+    fprintf('JPS -> SFC Trajectory total time is:              %.6f ms\n', (SFCTime.total + JPS2SFCTime) * converts2ms)
     fprintf("\n\n")
     fprintf('JPS -> StarConvex Trajectory polytope time is :              %.6f ms\n', SCPTime.polytope * converts2ms)
     fprintf('JPS -> StarConvex Trajectory polynomial time is :            %.6f ms\n', SCPTime.polynomial * converts2ms)
-    fprintf('JPS -> StarConvex Trajectory quadprogtime is :               %.6f ms\n', SCPTime.QP * converts2ms)
+    if not(skipQP)
+        fprintf('JPS -> StarConvex Trajectory quadprog time is :              %.6f ms\n', SCPTime.QP * converts2ms)
+    end
     fprintf('JPS -> StarConvex Trajectory total p+p w/o quadprog time is: %.6f ms\n', SCPTime.totalWoQP * converts2ms)
+    fprintf('JPS -> SFC Trajectory total time is:                         %.6f ms\n', SCPTime.total * converts2ms)
     fprintf("\n\n")
 end
 
 %% relationship between R (map size) and polytope time & number of polytopes & number of surfaces
 if mode_2
+
+    tic
+    for qn = 1:nquad    
+        path{qn} = JPS_3D(map, start{qn}, stop{qn});
+        path{qn} = [start{qn}; path{qn}(1:end,:)];
+        path{qn}(end + 1,:) = stop{qn};
+    end
+    JPSTimeCur = toc;
+    JPSTime = JPSTime + JPSTimeCur;
+    
+    
+    
+    % delete the points of no-use
+    path{2} = simplify_path(map, path{1});
+    
+    % Generating Convex Polytopes
+    obps = PointCloudMap(map.blocks, map.margin);   % blocks of Metric Map change to point cloud
+    
+    decomps{2} = [];
+
+
     ratioArr = logspace(-1, 1, ratioNum);
     RArr = zeros(size(ratioArr));
     polytopeTimeArr = zeros(size(ratioArr));
@@ -169,7 +204,7 @@ if mode_2
     grid on
     legend("Location", 'northeast', 'FontSize', 16)
 end
-
+    
 %% relationship between R (segment length) and polytope time & number of polytopes & number of surfaces
 if mode_3
     ratioArr = logspace(-1, 1, ratioNum) * -1;
@@ -219,6 +254,7 @@ if mode_3
     grid on
     legend("Location", 'northeast', 'FontSize', 16)
 end
+
 
 %% draw path and blocks
 if nquad == 1
